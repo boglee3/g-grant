@@ -1,14 +1,35 @@
 <?php
+session_start();
 include "../config/config.php";
 
-$result = $conn->query("SELECT * FROM chat_messages ORDER BY id ASC");
+if (!isset($_SESSION['id'])) {
+    exit("No access");
+}
 
-while($row = $result->fetch_assoc()) {
+$user_id = $_SESSION['id'];
+$admin_id = intval($_GET['user_id']);
 
-    if($row['sender_role'] == "admin"){
-        echo "<div style='color:green;text-align:right;'>🟢 ADMIN: {$row['message']}</div>";
-    } else {
-        echo "<div style='color:black;'>👤 USER: {$row['message']}</div>";
+$result = $conn->query("
+    SELECT * FROM chat_messages ORDER BY id ASC
+");
+
+while ($row = $result->fetch_assoc()) {
+
+    $msg = htmlspecialchars($row['message']);
+
+    $sender = $row['sender_id'] ?? 0;
+$receiver = $row['user_id'] ?? 0;
+
+    if (
+        ($sender == $user_id && $receiver == $admin_id) ||
+        ($sender == $admin_id && $receiver == $user_id)
+    ) {
+
+        if ($sender == $admin_id) {
+            echo "<div class='msg admin'>🟢 ADMIN: $msg</div>";
+        } else {
+            echo "<div class='msg user'>👤 YOU: $msg</div>";
+        }
     }
 }
 ?>
